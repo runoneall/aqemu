@@ -31,10 +31,10 @@ jobs:
       uses: ssrobins/install-cmake@v1
 
     - name: Configure CMake
-      run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=${{ inputs.build-type || 'Release' }}
+      run: cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=${{ inputs.build-type || 'Release' }}
 
     - name: Build project
-      run: cmake --build build --config ${{ inputs.build-type || 'Release' }}
+      run: cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 --build build --config ${{ inputs.build-type || 'Release' }}
 
     - name: Package artifacts
       run: |
