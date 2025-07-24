@@ -6,7 +6,6 @@
 # Tobias Gläßer (Qt5 port)
 
 PROJECT( AQEMU CXX )
-CMAKE_MINIMUM_REQUIRED( VERSION 3.1.0 FATAL_ERROR )
 
 # Available options
 OPTION( DEBUG "Build with debug information" )

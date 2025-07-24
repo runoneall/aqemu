@@ -27,14 +27,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install Latest CMake
+    - name: Install CMake
       uses: ssrobins/install-cmake@v1
+      with:
+        version: 3.20.0
 
     - name: Configure CMake
-      run: CMAKE_POLICY_VERSION_MINIMUM=3.5 cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=${{ inputs.build-type || 'Release' }}
+      run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=${{ inputs.build-type || 'Release' }}
 
     - name: Build project
-      run: CMAKE_POLICY_VERSION_MINIMUM=3.5 cmake --build build --config ${{ inputs.build-type || 'Release' }}
+      run: cmake --build build --config ${{ inputs.build-type || 'Release' }}
 
     - name: Package artifacts
       run: |
