@@ -1,0 +1,76 @@
+name: Build and Release Windows
+
+on:
+  push:
+    tags:
+      - 'v*'  # 标签推送时自动触发
+  workflow_dispatch:  # 添加手动触发选项
+    inputs:
+      release-tag:
+        description: "发布标签 (例如 v1.0.0)"
+        required: true
+        type: string
+      build-type:
+        description: "构建类型"
+        required: false
+        default: Release
+        type: choice
+        options:
+          - Release
+          - Debug
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up CMake
+      uses: cmake-actions/setup-cmake@v1
+
+    - name: Configure CMake
+      run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=${{ inputs.build-type || 'Release' }}
+
+    - name: Build project
+      run: cmake --build build --config ${{ inputs.build-type || 'Release' }}
+
+    - name: Package artifacts
+      run: |
+        mkdir release
+        copy build\${{ inputs.build-type || 'Release' }}\*.exe release\
+        copy build\${{ inputs.build-type || 'Release' }}\*.dll release\
+        7z a release.zip .\release\*
+
+    - name: Determine release tag
+      id: tag_version
+      run: |
+        # 如果是手动触发，使用输入参数；如果是标签触发，使用推送的标签
+        if (${{ github.event_name == 'workflow_dispatch' }}) {
+          echo "RELEASE_TAG=${{ github.event.inputs.release-tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        } else {
+          echo "RELEASE_TAG=${env:GITHUB_REF#refs/tags/}" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        }
+      shell: pwsh
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.tag_version.outputs.RELEASE_TAG }}
+        release_name: "Release ${{ steps.tag_version.outputs.RELEASE_TAG }}"
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./release.zip
+        asset_name: windows_${{ inputs.build-type || 'Release' }}_build_${{ steps.tag_version.outputs.RELEASE_TAG }}.zip
+        asset_content_type: application/zip
